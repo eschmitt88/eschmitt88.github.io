@@ -21,34 +21,30 @@
     </header>
 
     <section>
-      <h2>Selected work</h2>
-      <ul class="projects">
+      <h2>Live project sites</h2>
+      <!-- Populated from the GitHub API on load (repos with Pages enabled).
+           The list below is a static fallback shown if JS is off or the
+           unauthenticated API is rate-limited; JS replaces it when it loads. -->
+      <ul class="projects" id="projects">
         <li>
-          <a href="https://github.com/eschmitt88/dotaml-turbo">dotaml-turbo</a>
-          <span>Pre-game ML modeling of Dota&nbsp;2 Turbo matches — win prediction
-          and a foundation-model arc under hidden consistent evaluation.</span>
+          <a href="https://eschmitt88.github.io/agentic-3d-design/">agentic-3d-design</a>
+          <span>Can an LLM agent design manufacturable multi-part mechanical objects by writing parametric code-CAD in a closed verify-and-revise loop?</span>
         </li>
         <li>
-          <a href="https://github.com/eschmitt88/agentic-research">agentic-research</a>
-          <span>Curated literature and importable architectural concepts for
-          building autonomous research agents.</span>
+          <a href="https://eschmitt88.github.io/agentic-solid-mechanics/">agentic-solid-mechanics</a>
+          <span>Can an LLM agent operate solid-mechanics simulators — write/run/debug FEM decks and drive inverse-design loops — well enough for autonomous engineering analysis?</span>
         </li>
         <li>
-          <a href="https://github.com/eschmitt88/claude-system">claude-system</a>
-          <span>Version-controlled research framework, resource coordinator, and
-          dashboard for an agentic research setup.</span>
+          <a href="https://eschmitt88.github.io/agentic-research/">agentic-research</a>
+          <span>Curated literature and importable architectural concepts for building autonomous research agents.</span>
         </li>
         <li>
-          <a href="https://github.com/eschmitt88/agentic-resource-aware">agentic-resource-aware</a>
-          <span>Resource-aware scheduling and admission control for agentic workloads.</span>
+          <a href="https://eschmitt88.github.io/dotaml-turbo/">dotaml-turbo</a>
+          <span>Pre-game ML modeling of Dota&nbsp;2 Turbo matches — win prediction and a foundation-model arc under hidden consistent evaluation.</span>
         </li>
         <li>
-          <a href="https://github.com/eschmitt88/latent-io">latent-io</a>
-          <span>Experiments in latent representations.</span>
-        </li>
-        <li>
-          <a href="https://github.com/eschmitt88/<private-project>"><private-project></a>
-          <span>Live-data companion to the Dota&nbsp;2 modeling work.</span>
+          <a href="https://eschmitt88.github.io/claude-system/">claude-system</a>
+          <span>Version-controlled ~/.claude framework, resource coordinator, and dashboard for an agentic research setup.</span>
         </li>
       </ul>
     </section>
@@ -57,5 +53,30 @@
       <p>More on <a href="https://github.com/eschmitt88">GitHub</a>.</p>
     </footer>
   </main>
+
+  <script>
+  // Self-updating project list: one GitHub API call, no build step.
+  // Lists public, non-fork repos that have GitHub Pages enabled, newest first,
+  // each linking to its https://<owner>.github.io/<repo>/ site. Falls back to
+  // the static markup above on any error (e.g. the 60 req/hr unauthenticated cap).
+  (async () => {
+    const OWNER = "eschmitt88";
+    const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    try {
+      const r = await fetch(`https://api.github.com/users/${OWNER}/repos?per_page=100&sort=pushed&type=owner`);
+      if (!r.ok) return; // keep the static fallback
+      const repos = (await r.json())
+        .filter(x => x.has_pages && !x.fork && !x.private && !x.archived)
+        .filter(x => x.name.toLowerCase() !== `${OWNER.toLowerCase()}.github.io`); // not the root site itself
+      if (!repos.length) return;
+      const ul = document.getElementById("projects");
+      ul.innerHTML = repos.map(x => {
+        const site = `https://${OWNER}.github.io/${x.name}/`;
+        const desc = x.description ? `<span>${esc(x.description)}</span>` : "";
+        return `<li><a href="${site}">${esc(x.name)}</a>${desc}</li>`;
+      }).join("");
+    } catch { /* network/parse error — keep the static fallback */ }
+  })();
+  </script>
 </body>
 </html>
